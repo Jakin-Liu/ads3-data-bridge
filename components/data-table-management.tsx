@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DataTableList } from "@/components/data-table-list"
 import { DataTableDetail } from "@/components/data-table-detail"
 import { DataTableCreate } from "@/components/data-table-create"
@@ -12,91 +12,57 @@ export interface DataTableField {
 }
 
 export interface DataTable {
-  id: string
+  id: number
   handle: string
   name: string
   totalRecords: number
   fieldCount: number
   lastUpdated: string
-  mcpEnabled: boolean
-  apiEnabled: boolean
-  triggerEnabled: boolean
   fields: DataTableField[]
+  consumptionStatus: {
+    apiEnabled: boolean
+    mcpEnabled: boolean
+    triggerEnabled: boolean
+  }
+  status: string
+  createdAt: string
+  updatedAt: string
 }
 
-// 模拟数据
-const mockDataTables: DataTable[] = [
-  {
-    id: "1",
-    handle: "user_behavior",
-    name: "用户行为数据",
-    totalRecords: 15420,
-    fieldCount: 8,
-    lastUpdated: "2024-01-15 14:30",
-    mcpEnabled: true,
-    apiEnabled: true,
-    triggerEnabled: true,
-    fields: [
-      { name: "user_id", type: "string", required: true },
-      { name: "action_type", type: "string", required: true },
-      { name: "timestamp", type: "datetime", required: true },
-      { name: "session_id", type: "string", required: false },
-      { name: "page_url", type: "string", required: false },
-      { name: "device_type", type: "string", required: false },
-      { name: "location", type: "string", required: false },
-      { name: "metadata", type: "json", required: false },
-    ],
-  },
-  {
-    id: "2",
-    handle: "product_sales",
-    name: "产品销售记录",
-    totalRecords: 8932,
-    fieldCount: 12,
-    lastUpdated: "2024-01-14 09:15",
-    mcpEnabled: false,
-    apiEnabled: true,
-    triggerEnabled: false,
-    fields: [
-      { name: "order_id", type: "string", required: true },
-      { name: "product_id", type: "string", required: true },
-      { name: "customer_id", type: "string", required: true },
-      { name: "quantity", type: "number", required: true },
-      { name: "price", type: "number", required: true },
-      { name: "discount", type: "number", required: false },
-      { name: "category", type: "string", required: false },
-      { name: "sales_channel", type: "string", required: false },
-      { name: "region", type: "string", required: false },
-      { name: "payment_method", type: "string", required: false },
-      { name: "created_at", type: "datetime", required: true },
-      { name: "updated_at", type: "datetime", required: false },
-    ],
-  },
-  {
-    id: "3",
-    handle: "customer_feedback",
-    name: "客户反馈数据",
-    totalRecords: 456,
-    fieldCount: 6,
-    lastUpdated: "2024-01-13 16:45",
-    mcpEnabled: true,
-    apiEnabled: false,
-    triggerEnabled: true,
-    fields: [
-      { name: "feedback_id", type: "string", required: true },
-      { name: "customer_id", type: "string", required: true },
-      { name: "rating", type: "number", required: true },
-      { name: "comment", type: "text", required: false },
-      { name: "category", type: "string", required: false },
-      { name: "created_at", type: "datetime", required: true },
-    ],
-  },
-]
+
 
 export function DataTableManagement() {
   const [selectedTable, setSelectedTable] = useState<DataTable | null>(null)
-  const [dataTables, setDataTables] = useState<DataTable[]>(mockDataTables)
+  const [dataTables, setDataTables] = useState<DataTable[]>([])
   const [isCreating, setIsCreating] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 获取数据表列表
+  useEffect(() => {
+    const fetchTables = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/v1/tables/list')
+        const result = await response.json()
+        
+        if (result.success) {
+          setDataTables(result.data)
+        } else {
+          setError(result.error || '获取数据表列表失败')
+          setDataTables([])
+        }
+      } catch (error) {
+        console.error('获取数据表列表失败:', error)
+        setError('网络错误')
+        setDataTables([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTables()
+  }, [])
 
   const handleTableSelect = (table: DataTable) => {
     setSelectedTable(table)
@@ -126,5 +92,11 @@ export function DataTableManagement() {
     return <DataTableDetail table={selectedTable} onBack={handleBackToList} />
   }
 
-  return <DataTableList tables={dataTables} onTableSelect={handleTableSelect} onCreateTable={handleCreateTable} />
+  return <DataTableList 
+    tables={dataTables} 
+    onTableSelect={handleTableSelect} 
+    onCreateTable={handleCreateTable}
+    loading={loading}
+    error={error}
+  />
 }

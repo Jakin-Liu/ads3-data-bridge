@@ -26,22 +26,22 @@ export function DataTableDetail({ table, onBack }: DataTableDetailProps) {
             variant="outline"
             size="sm"
             onClick={onBack}
-            className="border-slate-500/30 text-slate-400 hover:bg-slate-500/10 bg-transparent"
+            className="border-gray-300 text-gray-600 hover:bg-gray-50 bg-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回列表
           </Button>
-          <div className="w-px h-6 bg-slate-700" />
+          <div className="w-px h-6 bg-gray-300" />
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 tech-gradient rounded-xl flex items-center justify-center relative overflow-hidden">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center relative overflow-hidden">
               <Database className="w-6 h-6 text-white relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 animate-pulse-slow" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">{table.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{table.name}</h1>
               <div className="flex items-center space-x-2 mt-1">
-                <Hash className="w-3 h-3 text-blue-400" />
-                <span className="text-sm code-font text-blue-400">{table.handle}</span>
+                <Hash className="w-3 h-3 text-blue-500" />
+                <span className="text-sm code-font text-blue-500">{table.handle}</span>
               </div>
             </div>
           </div>
@@ -66,24 +66,24 @@ export function DataTableDetail({ table, onBack }: DataTableDetailProps) {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 border border-slate-700/50">
+        <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200 shadow-sm">
           <TabsTrigger
             value="fields"
-            className="flex items-center space-x-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
+            className="flex items-center space-x-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=active]:border-blue-200"
           >
             <FileText className="w-4 h-4" />
             <span>数据字段</span>
           </TabsTrigger>
           <TabsTrigger
             value="upload"
-            className="flex items-center space-x-2 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400"
+            className="flex items-center space-x-2 data-[state=active]:bg-green-50 data-[state=active]:text-green-600 data-[state=active]:border-green-200"
           >
             <Upload className="w-4 h-4" />
             <span>数据上传</span>
           </TabsTrigger>
           <TabsTrigger
             value="consumption"
-            className="flex items-center space-x-2 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400"
+            className="flex items-center space-x-2 data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600 data-[state=active]:border-purple-200"
           >
             <Settings className="w-4 h-4" />
             <span>数据消费</span>

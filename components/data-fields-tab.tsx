@@ -1,141 +1,155 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Code } from "lucide-react"
+import { FileText, Code, Loader2 } from "lucide-react"
 import type { DataTable } from "@/components/data-table-management"
 
 interface DataFieldsTabProps {
   table: DataTable
 }
 
+interface FieldInfo {
+  name: string
+  type: string
+  original_type: string
+  required: boolean
+}
+
+interface RecordData {
+  id: number
+  fields: string[]
+  values: any[]
+}
+
+interface ApiResponse {
+  success: boolean
+  data?: {
+    tableInfo: {
+      id: number
+      name: string
+    }
+    fields: FieldInfo[]
+    records: RecordData[]
+    total: number
+    limit: number
+    tableName: string
+  }
+  error?: string
+  message?: string
+}
+
 export function DataFieldsTab({ table }: DataFieldsTabProps) {
-  // 模拟数据库中的真实数据
-  const sampleData = [
-    {
-      user_id: "user_12345",
-      action_type: "page_view",
-      timestamp: "2024-01-15T14:30:25Z",
-      session_id: "sess_abcdef123456",
-      page_url: "/dashboard",
-      device_type: "desktop",
-      location: "Beijing, China",
-      metadata: '{"browser": "Chrome", "version": "120.0.0.0"}',
-    },
-    {
-      user_id: "user_67890",
-      action_type: "button_click",
-      timestamp: "2024-01-15T14:28:15Z",
-      session_id: "sess_ghijkl789012",
-      page_url: "/profile",
-      device_type: "mobile",
-      location: "Shanghai, China",
-      metadata: '{"browser": "Safari", "version": "17.1.0"}',
-    },
-    {
-      user_id: "user_11111",
-      action_type: "form_submit",
-      timestamp: "2024-01-15T14:25:45Z",
-      session_id: "sess_mnopqr345678",
-      page_url: "/contact",
-      device_type: "desktop",
-      location: "Guangzhou, China",
-      metadata: '{"browser": "Firefox", "version": "121.0.0"}',
-    },
-    {
-      user_id: "user_22222",
-      action_type: "page_view",
-      timestamp: "2024-01-15T14:22:30Z",
-      session_id: "sess_stuvwx901234",
-      page_url: "/products",
-      device_type: "tablet",
-      location: "Shenzhen, China",
-      metadata: '{"browser": "Edge", "version": "120.0.0.0"}',
-    },
-    {
-      user_id: "user_33333",
-      action_type: "search",
-      timestamp: "2024-01-15T14:20:10Z",
-      session_id: "sess_yzabcd567890",
-      page_url: "/search",
-      device_type: "mobile",
-      location: "Hangzhou, China",
-      metadata: '{"browser": "Chrome", "version": "120.0.0.0"}',
-    },
-    {
-      user_id: "user_44444",
-      action_type: "download",
-      timestamp: "2024-01-15T14:18:55Z",
-      session_id: "sess_efghij123456",
-      page_url: "/downloads",
-      device_type: "desktop",
-      location: "Nanjing, China",
-      metadata: '{"browser": "Chrome", "version": "119.0.0.0"}',
-    },
-    {
-      user_id: "user_55555",
-      action_type: "logout",
-      timestamp: "2024-01-15T14:15:20Z",
-      session_id: "sess_klmnop789012",
-      page_url: "/logout",
-      device_type: "mobile",
-      location: "Wuhan, China",
-      metadata: '{"browser": "Safari", "version": "17.0.0"}',
-    },
-    {
-      user_id: "user_66666",
-      action_type: "login",
-      timestamp: "2024-01-15T14:12:40Z",
-      session_id: "sess_qrstuv345678",
-      page_url: "/login",
-      device_type: "desktop",
-      location: "Chengdu, China",
-      metadata: '{"browser": "Firefox", "version": "120.0.0"}',
-    },
-    {
-      user_id: "user_77777",
-      action_type: "page_view",
-      timestamp: "2024-01-15T14:10:15Z",
-      session_id: "sess_wxyzab901234",
-      page_url: "/about",
-      device_type: "tablet",
-      location: "Xi'an, China",
-      metadata: '{"browser": "Safari", "version": "16.6.0"}',
-    },
-    {
-      user_id: "user_88888",
-      action_type: "share",
-      timestamp: "2024-01-15T14:08:30Z",
-      session_id: "sess_cdefgh567890",
-      page_url: "/article/123",
-      device_type: "mobile",
-      location: "Tianjin, China",
-      metadata: '{"browser": "Chrome", "version": "120.0.0.0"}',
-    },
-  ]
+  const [fields, setFields] = useState<FieldInfo[]>([])
+  const [records, setRecords] = useState<RecordData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchTableData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // 调用API获取表格数据
+        const response = await fetch(`/api/v1/tables/data?tableId=${table.id}`)
+        const result: ApiResponse = await response.json()
+        
+        if (result.success && result.data) {
+          setFields(result.data.fields)
+          setRecords(result.data.records)
+        } else {
+          setError(result.message || '获取数据失败')
+        }
+      } catch (err) {
+        setError('网络请求失败')
+        console.error('获取表格数据失败:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTableData()
+  }, [table.id])
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-gray-900 flex items-center">
+              <FileText className="w-5 h-5 mr-3 text-blue-500" />
+              字段定义
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+              <span className="ml-2 text-gray-600">加载字段信息中...</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-gray-900 flex items-center">
+              <Code className="w-5 h-5 mr-3 text-green-500" />
+              数据示例
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
+              <span className="ml-2 text-gray-600">加载数据中...</span>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="text-red-500 mb-2">加载失败</div>
+                <div className="text-sm text-gray-600">{error}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 字段定义 */}
-        <Card className="tech-card">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <FileText className="w-5 h-5 mr-3 text-blue-400" />
+            <CardTitle className="text-gray-900 flex items-center">
+              <FileText className="w-5 h-5 mr-3 text-blue-500" />
               字段定义
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {table.fields.map((field) => (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+              {fields.map((field) => (
                 <div
                   key={field.name}
-                  className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="code-font text-blue-400 font-medium">{field.name}</span>
+                    <span className="code-font text-blue-600 font-medium">{field.name}</span>
                     {field.required && (
-                      <Badge variant="outline" className="text-xs bg-red-500/10 text-red-400 border-red-500/30">
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-600 border-red-200">
                         必填
                       </Badge>
                     )}
@@ -143,13 +157,15 @@ export function DataFieldsTab({ table }: DataFieldsTabProps) {
                   <Badge
                     variant="outline"
                     className={`text-xs ${
-                      field.type === "string"
-                        ? "bg-green-500/10 text-green-400 border-green-500/30"
-                        : field.type === "number"
-                          ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                          : field.type === "datetime"
-                            ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
-                            : "bg-yellow-500/10 text-yellow-400 border-yellow-500/30"
+                      field.type === "String"
+                        ? "bg-green-50 text-green-600 border-green-200"
+                        : field.type === "Number"
+                          ? "bg-blue-50 text-blue-600 border-blue-200"
+                          : field.type === "DateTime"
+                            ? "bg-purple-50 text-purple-600 border-purple-200"
+                            : field.type === "Boolean"
+                              ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                              : "bg-gray-50 text-gray-600 border-gray-200"
                     }`}
                   >
                     {field.type}
@@ -161,42 +177,45 @@ export function DataFieldsTab({ table }: DataFieldsTabProps) {
         </Card>
 
         {/* 数据示例 - 表格形式 */}
-        <Card className="tech-card">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Code className="w-5 h-5 mr-3 text-green-400" />
-              数据示例 (最近10条)
+            <CardTitle className="text-gray-900 flex items-center">
+              <Code className="w-5 h-5 mr-3 text-green-500" />
+              数据示例 (最近{records.length}条)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <div className="tech-card rounded-lg overflow-hidden">
+              <div className="bg-white rounded-lg overflow-hidden border border-gray-200 max-h-[500px] overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-800/50 border-b border-slate-700/50">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      {table.fields.slice(0, 4).map((field) => (
-                        <th key={field.name} className="text-left p-2 text-xs font-medium text-slate-300 code-font">
+                      {fields.slice(0, 4).map((field) => (
+                        <th key={field.name} className="text-left p-2 text-xs font-medium text-gray-700 code-font">
                           {field.name}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {sampleData.map((row, index) => (
-                      <tr key={index} className="border-b border-slate-700/30 hover:bg-slate-800/30 transition-colors">
-                        <td className="p-2 text-xs code-font text-blue-400">{row.user_id}</td>
-                        <td className="p-2 text-xs code-font text-green-400">{row.action_type}</td>
-                        <td className="p-2 text-xs code-font text-purple-400">{row.timestamp}</td>
-                        <td className="p-2 text-xs code-font text-slate-300">{row.session_id}</td>
+                    {records.slice(0, 10).map((record, index) => (
+                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        {record.values.slice(0, 4).map((value, valueIndex) => (
+                          <td key={valueIndex} className="p-2 text-xs code-font text-gray-700">
+                            {typeof value === 'string' && value.length > 20 
+                              ? `${value.substring(0, 20)}...` 
+                              : String(value)}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
-            <div className="mt-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30">
-              <div className="text-xs text-slate-400">
-                显示最近 10 条数据记录，仅展示前 4 个字段。完整数据包含 {table.fieldCount} 个字段。
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-xs text-gray-600">
+                显示最近 {Math.min(records.length, 10)} 条数据记录，仅展示前 4 个字段。完整数据包含 {fields.length} 个字段。
               </div>
             </div>
           </CardContent>
