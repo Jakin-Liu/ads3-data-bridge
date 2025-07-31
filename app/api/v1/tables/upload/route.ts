@@ -1,0 +1,270 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+// 定义上传数据的验证schema
+const UploadDataSchema = z.object({
+  tableId: z.union([z.string(), z.number()]).optional(),
+  tableName: z.string().optional(),
+  data: z.array(z.record(z.any())).min(1, '数据不能为空'),
+});
+
+// 验证请求数据
+const validateUploadRequest = (body: any) => {
+  return UploadDataSchema.parse(body);
+};
+
+// 获取表信息
+async function getTableInfo(tableId?: string | number, tableName?: string) {
+  let table;
+  
+  if (tableId) {
+    const id = typeof tableId === 'string' ? parseInt(tableId) : tableId;
+    table = await prisma.ads3Table.findUnique({
+      where: { id }
+    });
+  } else if (tableName) {
+    table = await prisma.ads3Table.findFirst({
+      where: { 
+        OR: [
+          { name: tableName },
+          { alias_name: tableName }
+        ]
+      }
+    });
+  }
+  
+  return table;
+}
+
+// 获取表的实际字段信息
+async function getTableColumns(actualTableName: string) {
+  try {
+    const columnsInfo = await prisma.$queryRaw`
+      SELECT 
+        column_name,
+        data_type,
+        is_nullable,
+        column_default
+      FROM information_schema.columns 
+      WHERE table_name = ${actualTableName}
+      AND column_name NOT IN ('id', 'created_at', 'updated_at')
+      ORDER BY ordinal_position
+    `;
+    
+    return Array.isArray(columnsInfo) ? columnsInfo : [];
+  } catch (error) {
+    console.error('获取表字段信息失败:', error);
+    throw new Error('无法获取表字段信息');
+  }
+}
+
+// 验证数据字段是否与表结构一致
+function validateDataFields(data: any[], expectedFields: any[]) {
+  const expectedFieldNames = expectedFields.map(field => field.column_name);
+  const errors: string[] = [];
+  
+  data.forEach((record, index) => {
+    const recordFields = Object.keys(record);
+    
+    // 检查是否有未定义的字段
+    const unknownFields = recordFields.filter(field => !expectedFieldNames.includes(field));
+    if (unknownFields.length > 0) {
+      errors.push(`记录 ${index + 1}: 包含未定义的字段: ${unknownFields.join(', ')}`);
+    }
+    
+    // 检查必需字段是否存在
+    const requiredFields = expectedFields
+      .filter(field => field.is_nullable === 'NO' && !field.column_default)
+      .map(field => field.column_name);
+    
+    const missingFields = requiredFields.filter(field => !recordFields.includes(field));
+    if (missingFields.length > 0) {
+      errors.push(`记录 ${index + 1}: 缺少必需字段: ${missingFields.join(', ')}`);
+    }
+  });
+  
+  return errors;
+}
+
+// 生成插入数据的SQL
+function generateInsertSQL(tableName: string, fields: string[], values: any[], fieldTypes: any[]) {
+  const fieldList = fields.map(field => `"${field}"`).join(', ');
+  const valuePlaceholders = values.map((_, index) => `$${index + 1}`).join(', ');
+  
+  return `
+    INSERT INTO "${tableName}" (${fieldList})
+    VALUES (${valuePlaceholders})
+  `;
+}
+
+// 处理数据类型转换
+function processValue(value: any, fieldType: string): any {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  
+  switch (fieldType) {
+    case 'timestamp':
+    case 'timestamp without time zone':
+    case 'timestamp with time zone':
+      // 如果是字符串格式的时间戳，转换为Date对象
+      if (typeof value === 'string') {
+        return new Date(value);
+      }
+      return value;
+    case 'integer':
+    case 'bigint':
+    case 'smallint':
+      return parseInt(value);
+    case 'double precision':
+    case 'real':
+    case 'numeric':
+      return parseFloat(value);
+    case 'boolean':
+      return Boolean(value);
+    default:
+      return value;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    // 验证请求数据
+    const validatedData = validateUploadRequest(body);
+    const { tableId, tableName, data } = validatedData;
+    
+    // 验证参数
+    if (!tableId && !tableName) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '缺少必要参数',
+          message: '请提供 table_id 或 table_name 参数'
+        },
+        { status: 400 }
+      );
+    }
+    
+    // 获取表信息
+    const table = await getTableInfo(tableId, tableName);
+    if (!table) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '表格不存在',
+          message: '未找到指定的表格'
+        },
+        { status: 404 }
+      );
+    }
+    
+    // 检查表格状态
+    if (table.status !== 'active') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '表格不可用',
+          message: '该表格当前不可用'
+        },
+        { status: 400 }
+      );
+    }
+    
+    // 获取实际表名
+    const actualTableName = `user_data_${table.name}`;
+    
+    // 获取表的字段信息
+    const tableColumns = await getTableColumns(actualTableName);
+    if (tableColumns.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '表格结构错误',
+          message: '无法获取表格字段信息'
+        },
+        { status: 500 }
+      );
+    }
+    
+    // 验证数据字段一致性
+    const fieldErrors = validateDataFields(data, tableColumns);
+    if (fieldErrors.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '数据字段验证失败',
+          message: '数据字段与表结构不匹配',
+          details: fieldErrors
+        },
+        { status: 400 }
+      );
+    }
+    
+    // 插入数据
+    let insertedCount = 0;
+    const errors: string[] = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      try {
+        const record = data[i];
+        const fields = Object.keys(record);
+        
+        // 处理数据类型转换
+        const processedValues = fields.map(field => {
+          const value = record[field];
+          const fieldInfo = tableColumns.find(col => col.column_name === field);
+          const fieldType = fieldInfo ? fieldInfo.data_type : 'text';
+          return processValue(value, fieldType);
+        });
+        
+        const insertSQL = generateInsertSQL(actualTableName, fields, processedValues, tableColumns);
+        await prisma.$executeRawUnsafe(insertSQL, ...processedValues);
+        
+        insertedCount++;
+      } catch (error) {
+        console.error(`插入记录 ${i + 1} 失败:`, error);
+        errors.push(`记录 ${i + 1}: ${error instanceof Error ? error.message : '插入失败'}`);
+      }
+    }
+    
+    return NextResponse.json({
+      success: true,
+      message: '数据上传完成',
+      data: {
+        tableId: table.id,
+        tableName: table.name,
+        total: data.length,
+        insertedCount: insertedCount,
+        errorCount: errors.length,
+        errors: errors.length > 0 ? errors : undefined
+      }
+    });
+    
+  } catch (error) {
+    console.error('数据上传失败:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '数据验证失败',
+          message: '请求数据格式不正确',
+          details: error.errors
+        },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: '数据上传失败',
+        message: error instanceof Error ? error.message : '未知错误'
+      },
+      { status: 500 }
+    );
+  }
+}

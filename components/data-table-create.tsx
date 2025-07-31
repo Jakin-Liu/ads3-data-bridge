@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Database, Sparkles, Eye, Save, FileText, Code, Lightbulb, Table, Copy } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import type { DataTable, DataTableField } from "@/components/data-table-management"
 
 interface DataTableCreateProps {
@@ -14,6 +15,7 @@ interface DataTableCreateProps {
 }
 
 export function DataTableCreate({ onBack, onSave }: DataTableCreateProps) {
+  const { toast } = useToast()
   const [inputText, setInputText] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [generatedTable, setGeneratedTable] = useState<{
@@ -56,49 +58,139 @@ ORD003	AirPods	2	1299	CUST001	2024-01-15 14:20`,
 
     setIsProcessing(true)
 
-    // 模拟AI处理延迟
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      // 调用真实的 parse API
+      const response = await fetch('/api/v1/tables/parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: inputText }),
+      })
 
-    // 模拟AI生成的表结构
-    const mockGeneratedTable = {
-      name: "用户行为数据",
-      handle: "user_behavior_analysis",
-      description: "用户在网站上的行为数据分析表，用于跟踪用户操作和页面访问情况",
-      fields: [
-        { name: "user_id", type: "string", required: true },
-        { name: "action_type", type: "string", required: true },
-        { name: "timestamp", type: "datetime", required: true },
-        { name: "page_url", type: "string", required: false },
-        { name: "device_type", type: "string", required: false },
-        { name: "session_id", type: "string", required: false },
-        { name: "location", type: "string", required: false },
-        { name: "user_agent", type: "string", required: false },
-      ],
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'AI 解析失败，请重试')
+      }
+
+      if (!result.success || !result.data) {
+        throw new Error('AI 返回数据格式错误')
+      }
+
+      // 使用API返回的真实数据
+      const apiData = result.data
+      const generatedTable = {
+        name: apiData.tableAliasName || apiData.tableName,
+        handle: apiData.tableName,
+        description: apiData.description || '',
+        fields: apiData.fields.map((field: any) => ({
+          name: field.name,
+          type: field.type,
+          required: field.required,
+          description: field.description || ''
+        }))
+      }
+
+      setGeneratedTable(generatedTable)
+      setTableName(generatedTable.name)
+      setTableHandle(generatedTable.handle)
+    } catch (error) {
+      console.error('AI 解析失败:', error)
+      toast({
+        title: "AI 解析失败",
+        description: error instanceof Error ? error.message : 'AI 解析失败，请重试',
+        variant: "destructive",
+      })
+    } finally {
+      setIsProcessing(false)
     }
-
-    setGeneratedTable(mockGeneratedTable)
-    setTableName(mockGeneratedTable.name)
-    setTableHandle(mockGeneratedTable.handle)
-    setIsProcessing(false)
   }
 
-  const handleSaveTable = () => {
+  const handleSaveTable = async () => {
     if (!generatedTable || !tableName || !tableHandle) return
 
-    const newTable: DataTable = {
-      id: Date.now().toString(),
-      handle: tableHandle,
-      name: tableName,
-      totalRecords: 0,
-      fieldCount: generatedTable.fields.length,
-      lastUpdated: new Date().toLocaleString("zh-CN"),
-      mcpEnabled: false,
-      apiEnabled: false,
-      triggerEnabled: false,
-      fields: generatedTable.fields,
-    }
+    setIsProcessing(true)
 
-    onSave(newTable)
+    try {
+      // 准备API请求数据
+      const requestData = {
+        tableName: tableHandle,
+        tableAliasName: tableName,
+        description: generatedTable.description,
+        fields: generatedTable.fields.map(field => {
+          // 将字段类型映射到 create API 期望的格式
+          let mappedType = field.type
+          if (field.type === 'string' || field.type === 'String') {
+            mappedType = 'String'
+          } else if (field.type === 'number' || field.type === 'Number') {
+            mappedType = 'Int'
+          } else if (field.type === 'datetime' || field.type === 'DateTime') {
+            mappedType = 'DateTime'
+          } else if (field.type === 'boolean' || field.type === 'Boolean') {
+            mappedType = 'Boolean'
+          } else {
+            mappedType = 'String' // 默认使用 String
+          }
+          
+          return {
+            name: field.name,
+            type: mappedType,
+            required: field.required,
+            description: field.name // 使用字段名作为描述
+          }
+        })
+      }
+
+      // 调用创建表的API
+      const response = await fetch('/api/v1/tables/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || '创建数据表失败，请重试')
+      }
+
+      if (!result.success) {
+        throw new Error('API 返回数据格式错误')
+      }
+
+      // 创建成功后的表格对象
+      const newTable: DataTable = {
+        id: result.data.tableId.toString(),
+        handle: tableHandle,
+        name: tableName,
+        totalRecords: 0,
+        fieldCount: generatedTable.fields.length,
+        lastUpdated: new Date().toLocaleString("zh-CN"),
+        mcpEnabled: false,
+        apiEnabled: false,
+        triggerEnabled: false,
+        fields: generatedTable.fields,
+      }
+
+      toast({
+        title: "数据表创建成功",
+        description: "数据表已成功保存到数据库中",
+      })
+
+      onSave(newTable)
+    } catch (error) {
+      console.error('创建数据表失败:', error)
+      toast({
+        title: "创建数据表失败",
+        description: error instanceof Error ? error.message : '创建数据表失败，请重试',
+        variant: "destructive",
+      })
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const handleExampleClick = (content: string) => {
@@ -255,11 +347,20 @@ ORD003	AirPods	2	1299	CUST001	2024-01-15 14:20`,
                 {/* 保存按钮 */}
                 <Button
                   onClick={handleSaveTable}
-                  disabled={!tableName || !tableHandle}
+                  disabled={!tableName || !tableHandle || isProcessing}
                   className="w-full elegant-gradient hover:opacity-90 disabled:opacity-50 text-white"
                 >
-                  <Save className="w-4 h-4 mr-2" />
-                  保存数据表
+                  {isProcessing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      正在保存...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      保存数据表
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum TableStatus {
+  active
+  inactive
+}
+
+enum FieldStatus {
+  active
+  inactive
+}
+
+model Ads3Table {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(50)
+  status      TableStatus @default(active)
+  user_id     String     @db.VarChar(30)
+  alias_name  String?
+  total_count Int        @default(0)
+  field_count Int        @default(0)
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  @@map("ads3_tables")
+}
+
+model Ads3TableField {
+  id          Int        @id @default(autoincrement())
+  table_id    Int        
+  name        String     
+  alias_name  String?
+  field_type  String     @default("string") // 字段类型：string, number, boolean, date, json等
+  status      FieldStatus @default(active)
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  @@map("ads3_table_fields")
+}
+
+model Ads3ConsumerCursor {
+  id          Int        @id @default(autoincrement())
+  consumer    String     @db.VarChar(30)
+  table_id    Int
+  table_name  String    @db.VarChar(50)
+  cursor_id   Int
+
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  @@map("ads3_consumer_cursor")
+}

@@ -11,9 +11,11 @@ interface DataTableListProps {
   tables: DataTable[]
   onTableSelect: (table: DataTable) => void
   onCreateTable: () => void
+  loading?: boolean
+  error?: string | null
 }
 
-export function DataTableList({ tables, onTableSelect, onCreateTable }: DataTableListProps) {
+export function DataTableList({ tables, onTableSelect, onCreateTable, loading = false, error = null }: DataTableListProps) {
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredTables = tables.filter(
@@ -32,7 +34,10 @@ export function DataTableList({ tables, onTableSelect, onCreateTable }: DataTabl
             <p className="text-slate-600">智能数据建模与AI消费场景配置中心</p>
           </div>
           <Button
-            onClick={onCreateTable}
+            onClick={() => {
+              console.log("新建数据表按钮被点击")
+              onCreateTable()
+            }}
             className="elegant-gradient hover:opacity-90 transition-opacity elegant-shadow text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -68,7 +73,7 @@ export function DataTableList({ tables, onTableSelect, onCreateTable }: DataTabl
                 <Activity className="w-4 h-4 text-green-500" />
                 <div className="text-sm">
                   <span className="text-slate-500">API消费</span>
-                  <div className="font-bold text-green-600">{tables.filter((t) => t.apiEnabled).length}</div>
+                  <div className="font-bold text-green-600">{tables.filter((t) => t.consumptionStatus?.apiEnabled).length}</div>
                 </div>
               </div>
             </div>
@@ -89,21 +94,37 @@ export function DataTableList({ tables, onTableSelect, onCreateTable }: DataTabl
 
       {/* Data Table List */}
       <div className="elegant-card rounded-xl overflow-hidden elegant-shadow">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50/80 border-b border-slate-200/60">
-              <tr>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">数据表</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">Handle</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">数据量</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">字段数</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">消费状态</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">最后更新</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTables.map((table) => (
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-slate-600">正在加载数据表...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-slate-600 mb-2">加载失败</p>
+            <p className="text-sm text-slate-500">{error}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50/80 border-b border-slate-200/60">
+                <tr>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">数据表</th>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">Handle</th>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">数据量</th>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">字段数</th>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">消费状态</th>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">最后更新</th>
+                  <th className="text-left p-4 text-sm font-medium text-slate-600">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTables.map((table) => (
                 <tr
                   key={table.id}
                   className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors cursor-pointer"
@@ -139,22 +160,22 @@ export function DataTableList({ tables, onTableSelect, onCreateTable }: DataTabl
                   </td>
                   <td className="p-4">
                     <div className="flex items-center space-x-2">
-                      {table.apiEnabled && (
+                      {table.consumptionStatus?.apiEnabled && (
                         <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200">
                           API
                         </Badge>
                       )}
-                      {table.mcpEnabled && (
+                      {table.consumptionStatus?.mcpEnabled && (
                         <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600 border-purple-200">
                           MCP
                         </Badge>
                       )}
-                      {table.triggerEnabled && (
+                      {table.consumptionStatus?.triggerEnabled && (
                         <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-600 border-yellow-200">
                           触发器
                         </Badge>
                       )}
-                      {!table.apiEnabled && !table.mcpEnabled && !table.triggerEnabled && (
+                      {!table.consumptionStatus?.apiEnabled && !table.consumptionStatus?.mcpEnabled && !table.consumptionStatus?.triggerEnabled && (
                         <span className="text-slate-400 text-sm">未配置</span>
                       )}
                     </div>
@@ -193,10 +214,11 @@ export function DataTableList({ tables, onTableSelect, onCreateTable }: DataTabl
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                              ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {filteredTables.length === 0 && (
