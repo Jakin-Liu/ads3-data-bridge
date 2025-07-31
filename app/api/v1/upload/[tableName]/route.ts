@@ -76,16 +76,7 @@ function validateDataFields(data: any[], expectedFields: any[]) {
   return errors;
 }
 
-// 生成插入数据的SQL
-function generateInsertSQL(tableName: string, fields: string[], values: any[], fieldTypes: any[]) {
-  const fieldList = fields.map(field => `"${field}"`).join(', ');
-  const valuePlaceholders = values.map((_, index) => `$${index + 1}`).join(', ');
-  
-  return `
-    INSERT INTO "${tableName}" (${fieldList})
-    VALUES (${valuePlaceholders})
-  `;
-}
+
 
 // 处理数据类型转换
 function processValue(value: any, fieldType: string): any {
@@ -241,7 +232,28 @@ export async function POST(
           return processedValue;
         });
         
-        const insertSQL = generateInsertSQL(actualTableName, fields, processedValues, tableColumns);
+        // 生成带类型转换的SQL
+        const fieldList = fields.map(field => `"${field}"`).join(', ');
+        const valuePlaceholders = fields.map((field, index) => {
+          const fieldInfo = tableColumns.find(col => col.column_name === field);
+          const fieldType = fieldInfo ? fieldInfo.data_type : 'text';
+          
+          if (fieldType === 'jsonb') {
+            return `$${index + 1}::jsonb`;
+          } else if (fieldType === 'json') {
+            return `$${index + 1}::json`;
+          } else {
+            return `$${index + 1}`;
+          }
+        }).join(', ');
+        
+        const insertSQL = `
+          INSERT INTO "${actualTableName}" (${fieldList})
+          VALUES (${valuePlaceholders})
+        `;
+
+        console.log('insertSQL', insertSQL)
+        console.log('processedValues', processedValues)
         await prisma.$executeRawUnsafe(insertSQL, ...processedValues);
         
         insertedCount++;
