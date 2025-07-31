@@ -112,6 +112,23 @@ function processValue(value: any, fieldType: string): any {
       return parseFloat(value);
     case 'boolean':
       return Boolean(value);
+    case 'json':
+    case 'jsonb':
+      // 处理JSON数据类型
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch (error) {
+          console.warn('JSON解析失败，保持原始字符串:', value);
+          return value;
+        }
+      } else if (typeof value === 'object') {
+        // 如果已经是对象或数组，直接返回
+        return value;
+      } else {
+        // 其他类型转换为字符串
+        return String(value);
+      }
     default:
       return value;
   }
@@ -212,7 +229,16 @@ export async function POST(
           const value = record[field];
           const fieldInfo = tableColumns.find(col => col.column_name === field);
           const fieldType = fieldInfo ? fieldInfo.data_type : 'text';
-          return processValue(value, fieldType);
+          const processedValue = processValue(value, fieldType);
+          
+          // 对于JSON类型，确保数据被正确序列化
+          if (fieldType === 'json' || fieldType === 'jsonb') {
+            if (typeof processedValue === 'object' && processedValue !== null) {
+              return JSON.stringify(processedValue);
+            }
+          }
+          
+          return processedValue;
         });
         
         const insertSQL = generateInsertSQL(actualTableName, fields, processedValues, tableColumns);
