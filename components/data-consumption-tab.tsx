@@ -72,7 +72,7 @@ export function DataConsumptionTab({ table }: DataConsumptionTabProps) {
   }
 
   const generateApiUrl = () => {
-    const baseUrl = `https://api-databridge.ton.ai/api/v1/consume/${table.handle}`
+    const baseUrl = `https://data.ads3.ai/api/v1/consume/${table.handle}`
     const params = new URLSearchParams()
     params.append('consumer', 'api')
     selectedFields.forEach(field => {
@@ -82,7 +82,7 @@ export function DataConsumptionTab({ table }: DataConsumptionTabProps) {
   }
 
   const generateMcpUrl = () => {
-    const baseUrl = `https://api-databridge.ton.ai/api/v1/consume/${table.handle}`
+    const baseUrl = `https://data.ads3.ai/api/v1/consume/${table.handle}`
     const params = new URLSearchParams()
     params.append('consumer', 'mcp')
     selectedFields.forEach(field => {

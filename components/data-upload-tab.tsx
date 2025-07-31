@@ -40,8 +40,8 @@ export function DataUploadTab({ table }: DataUploadTabProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  const apiUploadUrl = `https://api-databridge.ton.ai/api/v1/upload/${table.handle}`
-  const mcpUploadUrl = `mcp://databridge.ai/v1/upload/${table.handle}`
+  const apiUploadUrl = `https://data.ads3.ai/api/v1/upload/${table.handle}`
+  const mcpUploadUrl = `mcp://data.ads3.ai/v1/upload/${table.handle}`
 
   // 获取表格详情和模板数据
   useEffect(() => {
