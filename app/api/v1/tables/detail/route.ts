@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
             convertedType = 'DateTime'
           } else if (column.data_type === 'boolean') {
             convertedType = 'Boolean'
+          } else if (column.data_type === 'jsonb' || column.data_type === 'json') {
+            convertedType = 'Json'
           }
 
           return {
@@ -203,6 +205,8 @@ function generateTemplateData(fields: any[]) {
       } else {
         templateData[fieldName] = true
       }
+    } else if (fieldType === 'Json') {
+      templateData[fieldName] = { data: 'example', timestamp: Date.now() }
     } else if (fieldType === 'JSON') {
       // 根据字段名生成JSON类型数据
       if (fieldName.includes('config') || fieldName.includes('Config')) {
