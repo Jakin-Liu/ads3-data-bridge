@@ -58,8 +58,15 @@ ${input}
 1. 生成一个合适的下划线表名（如果没有合适的表名，请生成一个符合的表名） 表名还需要有个别名
 2. 每个字段的名称、数据类型、是否必填
 3. 表的中文描述
-4. 数据字段的类型，如果识别是字符串的都使用String返回，数字的都统一返回Number，时间类型统一返回DateTime
+4. 数据type字段的类型 枚举值: String, Number, DateTime, Boolean, Json
+  - 字符串的都使用String返回
+  - 数字的都统一返回Number
+  - 时间类型统一返回DateTime
+  - 布尔类型统一返回Boolean
+  - 对象类型统一返回Json
+  - 其他类型统一返回String
 5. 字段名称尽量使用下划线标准
+6. 只有当用户明确提示字段要求必填，才返回required字段为true，否则都返回false
 
 请以JSON格式返回，格式如下：
 {
@@ -100,8 +107,6 @@ ${input}
         { status: 500 }
       );
     }
-
-    console.log(responseText);
 
     // 解析 AI 返回的 JSON
     let tableStructure: TableStructure;

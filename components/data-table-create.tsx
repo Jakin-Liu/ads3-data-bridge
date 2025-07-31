@@ -118,28 +118,7 @@ ORD003	AirPods	2	1299	CUST001	2024-01-15 14:20`,
         tableName: tableHandle,
         tableAliasName: tableName,
         description: generatedTable.description,
-        fields: generatedTable.fields.map(field => {
-          // 将字段类型映射到 create API 期望的格式
-          let mappedType = field.type
-          if (field.type === 'string' || field.type === 'String') {
-            mappedType = 'String'
-          } else if (field.type === 'number' || field.type === 'Number') {
-            mappedType = 'Int'
-          } else if (field.type === 'datetime' || field.type === 'DateTime') {
-            mappedType = 'DateTime'
-          } else if (field.type === 'boolean' || field.type === 'Boolean') {
-            mappedType = 'Boolean'
-          } else {
-            mappedType = 'String' // 默认使用 String
-          }
-          
-          return {
-            name: field.name,
-            type: mappedType,
-            required: field.required,
-            description: field.name // 使用字段名作为描述
-          }
-        })
+        fields: generatedTable.fields
       }
 
       // 调用创建表的API

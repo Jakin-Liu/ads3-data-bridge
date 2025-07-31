@@ -102,6 +102,8 @@ export async function GET(request: NextRequest) {
             convertedType = 'DateTime'
           } else if (column.data_type === 'boolean') {
             convertedType = 'Boolean'
+          } else if (column.data_type === 'jsonb' || column.data_type === 'json') {
+            convertedType = 'Json'
           }
 
           return {

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 // 定义字段类型枚举
-const FieldTypeEnum = z.enum(['String', 'Int', 'Float', 'Boolean', 'DateTime', 'Text']);
+const FieldTypeEnum = z.enum(['String', 'Int', 'Float', 'Boolean', 'DateTime', 'Text', 'Number', 'Json']);
 
 // 定义字段验证schema
 const FieldSchema = z.object({
@@ -30,14 +30,18 @@ function mapFieldTypeToPostgreSQL(type: string, required: boolean): string {
       return `TEXT${notNull}`;
     case 'Text':
       return `TEXT${notNull}`;
+    case 'Number':
+      return `FLOAT${notNull}`;
     case 'Int':
       return `INTEGER${notNull}`;
     case 'Float':
-      return `DOUBLE PRECISION${notNull}`;
+      return `FLOAT${notNull}`;
     case 'Boolean':
       return `BOOLEAN${notNull}`;
     case 'DateTime':
       return `TIMESTAMP${notNull}`;
+    case 'Json':
+      return `JSONB${notNull}`;
     default:
       return `VARCHAR(255)${notNull}`;
   }
@@ -112,6 +116,10 @@ export async function POST(request: NextRequest) {
     
     // 生成创建表的SQL
     const createTableSQL = generateCreateTableSQL(genTableName, fields);
+
+    console.log('******************')
+    console.log(createTableSQL)
+
     const triggerFunctionSQL = generateUpdateTriggerFunction(genTableName);
     const createTriggerSQL = generateCreateTriggerSQL(genTableName);
     
