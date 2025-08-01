@@ -19,6 +19,7 @@ const CreateTableSchema = z.object({
   tableAliasName: z.string().min(1, '表别名不能为空'),
   description: z.string().optional(),
   fields: z.array(FieldSchema).min(1, '至少需要一个字段'),
+  uniqueKeys: z.array(z.string()).optional().default([]),
 });
 
 // 将Prisma字段类型映射到PostgreSQL类型
@@ -88,6 +89,21 @@ CREATE TRIGGER update_${tableName}_updated_at
     EXECUTE FUNCTION update_updated_at_column();`;
 }
 
+// 生成创建唯一键约束的SQL语句
+// uniqueKeys是字符串数组，表示这些字段共同组成一个唯一键
+function generateUniqueKeyConstraintsSQL(tableName: string, uniqueKeys: string[]): string[] {
+  if (!uniqueKeys || uniqueKeys.length === 0) {
+    return [];
+  }
+
+  // 将字段数组转换为带引号的字段名，用逗号分隔
+  const fieldNames = uniqueKeys.map(field => `"${field}"`).join(', ');
+  // 生成唯一键约束名称，使用表名和key名字用下划线分开
+  const keyName = uniqueKeys.join('_');
+  const constraintName = `${tableName}_${keyName}_unique`;
+  return [`ALTER TABLE "${tableName}" ADD CONSTRAINT "${constraintName}" UNIQUE (${fieldNames});`];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -95,7 +111,7 @@ export async function POST(request: NextRequest) {
     // 验证请求数据
     const validatedData = CreateTableSchema.parse(body);
     
-    const { tableName, tableAliasName, description, fields } = validatedData;
+    const { tableName, tableAliasName, description, fields, uniqueKeys } = validatedData;
 
     const genTableName = generateTableName(tableName)
     
@@ -113,20 +129,37 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 验证唯一键字段是否存在于表字段中
+    if (uniqueKeys && uniqueKeys.length > 0) {
+      const tableFieldNames = fields.map(field => field.name);
+      for (const uniqueKey of uniqueKeys) {
+        if (!tableFieldNames.includes(uniqueKey)) {
+          return NextResponse.json(
+            { error: `唯一键字段 "${uniqueKey}" 不存在于表字段中` },
+            { status: 400 }
+          );
+        }
+      }
+    }
     
     // 生成创建表的SQL
     const createTableSQL = generateCreateTableSQL(genTableName, fields);
-
-    console.log('******************')
-    console.log(createTableSQL)
-
     const triggerFunctionSQL = generateUpdateTriggerFunction(genTableName);
     const createTriggerSQL = generateCreateTriggerSQL(genTableName);
+    
+    // 生成唯一键约束SQL
+    const uniqueKeyConstraintsSQL = generateUniqueKeyConstraintsSQL(genTableName, uniqueKeys);
     
     // 执行SQL创建表
     await prisma.$executeRawUnsafe(createTableSQL);
     await prisma.$executeRawUnsafe(triggerFunctionSQL);
     await prisma.$executeRawUnsafe(createTriggerSQL);
+    
+    // 执行唯一键约束
+    for (const constraintSQL of uniqueKeyConstraintsSQL) {
+      await prisma.$executeRawUnsafe(constraintSQL);
+    }
     
     // 保存表信息到ads3_tables表
     const tableRecord = await prisma.ads3Table.create({
@@ -161,6 +194,7 @@ export async function POST(request: NextRequest) {
         tableAliasName,
         fieldCount: fields.length,
         fields: fieldRecords,
+        uniqueKeys: uniqueKeys || [],
       },
     });
     

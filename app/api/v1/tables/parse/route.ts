@@ -7,7 +7,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-console.log(process.env.OPENAI_API_KEY);
 
 // 定义表字段类型
 interface TableField {

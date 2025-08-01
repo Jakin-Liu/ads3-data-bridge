@@ -7,8 +7,6 @@ export async function GET(request: NextRequest) {
     const tableId = searchParams.get('tableId')
     const tableName = searchParams.get('tableName')
 
-    console.log(tableId, tableName)
-
     // 验证参数
     if (!tableId && !tableName) {
       return NextResponse.json(
@@ -81,6 +79,21 @@ export async function GET(request: NextRequest) {
         actualTableName
       )
 
+      // 查询表的唯一键信息
+      const uniqueKeysInfo = await prisma.$queryRawUnsafe(
+        `SELECT tc.constraint_name,
+               string_agg(kcu.column_name, ', ' ORDER BY kcu.ordinal_position) AS unique_columns
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+         AND tc.table_schema = kcu.table_schema
+        WHERE tc.table_schema = 'public'
+          AND tc.table_name = $1
+          AND tc.constraint_type = 'UNIQUE'
+        GROUP BY tc.constraint_name`,
+        actualTableName
+      )
+
       // 使用原生SQL查询来获取动态表格的数据
       const data = await prisma.$queryRawUnsafe(
         `SELECT * FROM "${actualTableName}" ORDER BY id DESC LIMIT 100`
@@ -139,7 +152,10 @@ export async function GET(request: NextRequest) {
           records: formattedRecords,
           total: Array.isArray(data) ? data.length : 0,
           limit: 100,
-          tableName: table.name
+          tableName: table.name,
+          uniqueKeys: Array.isArray(uniqueKeysInfo) ? uniqueKeysInfo.flatMap(key => 
+            key.unique_columns.split(', ').map((col: string) => col.trim())
+          ) : []
         }
       })
 
