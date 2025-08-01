@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Code, Loader2 } from "lucide-react"
@@ -35,77 +35,138 @@ interface ApiResponse {
     total: number
     limit: number
     tableName: string
+    uniqueKeys: string[]
   }
   error?: string
   message?: string
 }
 
+// 全局请求状态管理
+const globalRequestState = new Map<number, {
+  inProgress: boolean
+  hasLoaded: boolean
+  timestamp: number
+}>()
+
 export function DataFieldsTab({ table }: DataFieldsTabProps) {
   const [fields, setFields] = useState<FieldInfo[]>([])
   const [records, setRecords] = useState<RecordData[]>([])
+  const [uniqueKeys, setUniqueKeys] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // 使用ref来检查组件是否挂载
+  const isMounted = useRef(true)
 
   useEffect(() => {
+    
+    // 获取或初始化全局状态
+    let requestState = globalRequestState.get(table.id)
+    if (!requestState) {
+      requestState = { inProgress: false, hasLoaded: false, timestamp: 0 }
+      globalRequestState.set(table.id, requestState)
+    }
+    
     const fetchTableData = async () => {
+      // 如果已经在请求中，则跳过
+      if (requestState.inProgress) {
+        return
+      }
+
       try {
+        requestState.inProgress = true
         setLoading(true)
         setError(null)
         
+        
         // 调用API获取表格数据
         const response = await fetch(`/api/v1/tables/data?tableId=${table.id}`)
+        
+        // 检查组件是否仍然挂载
+        if (!isMounted.current) {
+          return
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
         const result: ApiResponse = await response.json()
+        
+        // 再次检查组件是否仍然挂载
+        if (!isMounted.current) {
+          return
+        }
         
         if (result.success && result.data) {
           setFields(result.data.fields)
           setRecords(result.data.records)
+          setUniqueKeys(result.data.uniqueKeys || [])
+          requestState.hasLoaded = true
+          requestState.timestamp = Date.now()
         } else {
           setError(result.message || '获取数据失败')
         }
       } catch (err) {
+        if (!isMounted.current) {
+          return
+        }
+        
         setError('网络请求失败')
         console.error('获取表格数据失败:', err)
       } finally {
-        setLoading(false)
+        if (isMounted.current) {
+          setLoading(false)
+        }
+        requestState.inProgress = false
       }
     }
 
     fetchTableData()
   }, [table.id])
 
+  // 组件挂载和卸载状态管理
+  useEffect(() => {
+    isMounted.current = true
+    
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="bg-white border border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900 flex items-center">
-              <FileText className="w-5 h-5 mr-3 text-blue-500" />
-              字段定义
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-              <span className="ml-2 text-gray-600">加载字段信息中...</span>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-gray-900 flex items-center">
+                <FileText className="w-5 h-5 mr-3 text-blue-500" />
+                字段定义
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                <span className="ml-2 text-gray-600">加载字段信息中...</span>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900 flex items-center">
-              <Code className="w-5 h-5 mr-3 text-green-500" />
-              数据示例
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
-              <span className="ml-2 text-gray-600">加载数据中...</span>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-gray-900 flex items-center">
+                <Code className="w-5 h-5 mr-3 text-green-500" />
+                数据示例
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
+                <span className="ml-2 text-gray-600">加载数据中...</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -140,6 +201,23 @@ export function DataFieldsTab({ table }: DataFieldsTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* 唯一键信息摘要 - 移到上方 */}
+            {uniqueKeys.length > 0 && (
+              <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-purple-700">唯一键字段</span>
+                </div>
+                <div className="text-xs text-purple-600">
+                  {uniqueKeys.map((key, index) => (
+                    <span key={key} className="code-font">
+                      {key}{index < uniqueKeys.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {fields.map((field) => (
                 <div

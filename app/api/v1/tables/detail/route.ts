@@ -59,8 +59,6 @@ export async function GET(request: NextRequest) {
         actualTableName
       )
 
-      console.log('columnsInfo:', columnsInfo)
-
       // 生成字段列表信息，排除created_at和updated_at字段
       const fields = Array.isArray(columnsInfo) ? columnsInfo
         .filter(column => column.column_name !== 'created_at' && column.column_name !== 'updated_at' && column.column_name !== 'id')
@@ -92,7 +90,6 @@ export async function GET(request: NextRequest) {
           }
         }) : []
 
-    console.log('converted fields:', fields)
 
       // 生成模板数据
       const templateData = generateTemplateData(fields)

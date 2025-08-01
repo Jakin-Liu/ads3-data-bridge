@@ -132,8 +132,6 @@ export async function POST(
   try {
     const { tableName } = await params;
 
-    console.log('tableName', tableName)
-    
     if (!tableName) {
       return NextResponse.json(
         {
@@ -251,9 +249,6 @@ export async function POST(
           INSERT INTO "${actualTableName}" (${fieldList})
           VALUES (${valuePlaceholders})
         `;
-
-        console.log('insertSQL', insertSQL)
-        console.log('processedValues', processedValues)
         await prisma.$executeRawUnsafe(insertSQL, ...processedValues);
         
         insertedCount++;

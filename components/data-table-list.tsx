@@ -35,7 +35,6 @@ export function DataTableList({ tables, onTableSelect, onCreateTable, loading = 
           </div>
           <Button
             onClick={() => {
-              console.log("新建数据表按钮被点击")
               onCreateTable()
             }}
             className="elegant-gradient hover:opacity-90 transition-opacity elegant-shadow text-white"
