@@ -2,6 +2,7 @@
 CREATE TABLE "ads3_tables" (
     "id" SERIAL PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL UNIQUE,
+    "user_id" VARCHAR(255) NOT NULL,
     "status" VARCHAR(15) NOT NULL DEFAULT 'active',
     "alias_name" VARCHAR(255),
     "total_count" INTEGER NOT NULL DEFAULT 0,
