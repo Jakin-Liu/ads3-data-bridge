@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Wifi, Code, Copy, Loader2 } from "lucide-react"
+import { getApiBaseUrl } from "@/lib/utils"
 import type { DataTable } from "@/components/data-table-management"
 
 interface Field {
@@ -71,8 +72,10 @@ export function DataConsumptionTab({ table }: DataConsumptionTabProps) {
     setSelectedFields([])
   }
 
+
+
   const generateApiUrl = () => {
-    const baseUrl = `https://data.ads3.ai/api/v1/consume/${table.handle}`
+    const baseUrl = `${getApiBaseUrl()}/api/v1/consume/${table.handle}`
     const params = new URLSearchParams()
     params.append('consumer', 'api')
     selectedFields.forEach(field => {
@@ -82,7 +85,7 @@ export function DataConsumptionTab({ table }: DataConsumptionTabProps) {
   }
 
   const generateMcpUrl = () => {
-    const baseUrl = `https://data.ads3.ai/api/v1/consume/${table.handle}`
+    const baseUrl = `${getApiBaseUrl()}/api/v1/consume/${table.handle}`
     const params = new URLSearchParams()
     params.append('consumer', 'mcp')
     selectedFields.forEach(field => {

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Upload, Wifi, Code, Copy } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { getApiBaseUrl } from "@/lib/utils"
 import type { DataTable } from "@/components/data-table-management"
 
 interface DataUploadTabProps {
@@ -40,8 +41,8 @@ export function DataUploadTab({ table }: DataUploadTabProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  const apiUploadUrl = `https://data.ads3.ai/api/v1/upload/${table.handle}`
-  const mcpUploadUrl = `mcp://data.ads3.ai/v1/upload/${table.handle}`
+  const apiUploadUrl = `${getApiBaseUrl()}/api/v1/upload/${table.handle}`
+  const mcpUploadUrl = `mcp://${getApiBaseUrl().replace(/^https?:\/\//, '')}/v1/upload/${table.handle}`
 
   // 获取表格详情和模板数据
   useEffect(() => {
