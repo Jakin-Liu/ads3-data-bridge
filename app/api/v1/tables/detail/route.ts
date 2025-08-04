@@ -148,8 +148,6 @@ function generateTemplateData(fields: any[]) {
   fields.forEach(field => {
     const fieldName = field.aliasName || field.name
     const fieldType = field.fieldType
-
-    console.log(fieldType, fieldName)
     
     // 根据字段类型和字段名生成示例数据
     if (fieldType === 'DateTime') {
