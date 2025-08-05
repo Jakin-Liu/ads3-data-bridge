@@ -25,3 +25,11 @@ CREATE TRIGGER update_ads3_tables_updated_at
     BEFORE UPDATE ON "ads3_tables" 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+
+
+ALTER TABLE ads3_queue_subscribers
+ADD COLUMN name VARCHAR(100),
+ADD COLUMN table_id int,
+ADD COLUMN trigger_type VARCHAR(50),
+ADD COLUMN trigger_config JSON,
+ADD COLUMN fields TEXT[];
