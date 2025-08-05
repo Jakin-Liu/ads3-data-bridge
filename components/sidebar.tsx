@@ -4,6 +4,17 @@ import { cn } from '@/lib/utils'
 import { Database, Settings, Cpu, Zap, Activity, User, LogOut } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { useAuth } from '@/contexts/auth-context'
 
 interface SidebarProps {
@@ -12,7 +23,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, error } = useAuth()
 
   const menuItems = [
     {
@@ -103,24 +114,54 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
 
       {/* User Section */}
       <div className="p-4 border-t border-slate-200/60 relative space-y-3">
+        {/* Error Message */}
+        {error && (
+          <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-600">{error}</p>
+          </div>
+        )}
+
         {isAuthenticated && user ? (
           <div className="flex items-center space-x-3 p-3 rounded-xl elegant-card elegant-shadow">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarImage src={user.avatar} alt={user.name || user.email} />
               <AvatarFallback className="elegant-gradient text-white text-sm font-medium">
-                {user.name
+                {(user.name || user.email || 'U')
                   .split(' ')
                   .map((n) => n[0])
-                  .join('')}
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800 truncate">{user.name}</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium text-slate-800 truncate">{user.name || user.email}</p>
+                {user.isAdmin && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Admin</span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 truncate">{user.email}</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={logout} className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 text-slate-400">
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 text-slate-400">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="elegant-card">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="elegant-text-gradient">确认退出登录</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-600">您确定要退出登录吗？退出后需要重新登录才能访问系统。</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-3">
+                  <AlertDialogCancel className="hover:bg-slate-100">取消</AlertDialogCancel>
+                  <AlertDialogAction onClick={logout} className="bg-red-500 hover:bg-red-600 text-white">
+                    确认退出
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ) : (
           <Button

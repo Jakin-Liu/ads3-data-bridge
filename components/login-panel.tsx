@@ -5,19 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/auth-context'
 
 export function LoginPanel() {
-  const { login } = useAuth()
+  const { login, error } = useAuth()
 
   const handleLogin = () => {
     // Mock user data - 模拟用户数据
-    const mockUser = {
-      id: '1',
-      name: 'Eason C',
-      email: 'eason@ads3.network',
-      avatar: '/placeholder-user.jpg',
-    }
-
-    // 模拟登录成功
-    login(mockUser)
+    // const mockUser = {
+    //   id: '1',
+    //   name: 'Eason C',
+    //   email: 'eason@ads3.network',
+    //   avatar: '/placeholder-user.jpg',
+    // }
+    // // 模拟登录成功
+    // login(mockUser)
+    const authUrl = `https://admin.task3.org/auth?auth_type=task3_auth&redirect_url=${window.location.href}`
+    window?.open(authUrl, '_self')
   }
 
   return (
@@ -39,6 +40,13 @@ export function LoginPanel() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            </div>
+          )}
+
           <Button
             onClick={handleLogin}
             className="w-full h-12 elegant-gradient text-white font-medium rounded-xl hover:opacity-90 transition-all duration-300 elegant-shadow"
