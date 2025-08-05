@@ -1,7 +1,10 @@
-"use client"
+'use client'
 
-import { cn } from "@/lib/utils"
-import { Database, Settings, Cpu, Zap, Activity } from "lucide-react"
+import { cn } from '@/lib/utils'
+import { Database, Settings, Cpu, Zap, Activity, User, LogOut } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/auth-context'
 
 interface SidebarProps {
   activeMenu: string
@@ -9,20 +12,22 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
+  const { user, isAuthenticated, logout } = useAuth()
+
   const menuItems = [
     {
-      id: "data-tables",
-      label: "数据表管理",
+      id: 'data-tables',
+      label: '数据表管理',
       icon: Database,
     },
     {
-      id: "data-triggers",
-      label: "数据触发",
+      id: 'data-triggers',
+      label: '数据触发',
       icon: Zap,
     },
     {
-      id: "system-settings",
-      label: "系统设置",
+      id: 'system-settings',
+      label: '系统设置',
       icon: Settings,
     },
   ]
@@ -70,27 +75,17 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
                 <button
                   onClick={() => onMenuChange(item.id)}
                   className={cn(
-                    "w-full flex items-center space-x-4 p-4 rounded-xl text-left transition-all duration-300 relative group",
+                    'w-full flex items-center space-x-4 p-4 rounded-xl text-left transition-all duration-300 relative group',
                     isActive
-                      ? "elegant-card elegant-shadow-lg bg-gradient-to-r from-blue-50 to-purple-50"
-                      : "hover:bg-slate-50/80 hover:border-blue-200/50 border border-transparent",
+                      ? 'elegant-card elegant-shadow-lg bg-gradient-to-r from-blue-50 to-purple-50'
+                      : 'hover:bg-slate-50/80 hover:border-blue-200/50 border border-transparent'
                   )}
                 >
                   <div className="relative">
-                    <Icon
-                      className={cn(
-                        "w-5 h-5 transition-colors",
-                        isActive ? "text-blue-600" : "text-slate-500 group-hover:text-blue-600",
-                      )}
-                    />
+                    <Icon className={cn('w-5 h-5 transition-colors', isActive ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-600')} />
                   </div>
                   <div className="relative">
-                    <div
-                      className={cn(
-                        "font-medium transition-colors",
-                        isActive ? "text-slate-800" : "text-slate-600 group-hover:text-slate-800",
-                      )}
-                    >
+                    <div className={cn('font-medium transition-colors', isActive ? 'text-slate-800' : 'text-slate-600 group-hover:text-slate-800')}>
                       {item.label}
                     </div>
                   </div>
@@ -106,8 +101,40 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-200/60 relative">
+      {/* User Section */}
+      <div className="p-4 border-t border-slate-200/60 relative space-y-3">
+        {isAuthenticated && user ? (
+          <div className="flex items-center space-x-3 p-3 rounded-xl elegant-card elegant-shadow">
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="elegant-gradient text-white text-sm font-medium">
+                {user.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-800 truncate">{user.name}</p>
+              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={logout} className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 text-slate-400">
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            className="w-full elegant-gradient text-white font-medium rounded-xl hover:opacity-90 transition-all duration-300 elegant-shadow"
+            onClick={() => {
+              /* Login will be handled by parent component */
+            }}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Login
+          </Button>
+        )}
+
+        {/* System Status */}
         <div className="text-xs text-slate-500 code-font">
           <div className="flex justify-between items-center">
             <span>Build 2024.01.15</span>
