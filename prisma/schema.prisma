@@ -61,3 +61,36 @@ model Ads3ConsumerCursor {
   updated_at  DateTime   @updatedAt
   @@map("ads3_consumer_cursor")
 }
+
+enum EndpointType {
+    api
+    queue
+}
+
+enum SubscribeStatus {
+  active
+  inactive
+}
+
+enum TriggerType {
+  new
+}
+
+model Ads3QueueSubscriber {
+    id            Int           @id @default(autoincrement())
+    name          String        @db.VarChar(100)
+    table_id      Int
+    table_name    String        @db.VarChar(100)
+    status        String        @default("active")
+    endpoint_type String  @default("api")
+    endpoint      Json          // 存储 JSON 结构，可能包含 api、queue_name 或 queue_id 字段
+    created_at    DateTime      @default(now())
+    updated_at    DateTime      @updatedAt
+    trigger_type  String      @default("new")
+    fields        String[]
+    trigger_config  Json      
+
+    
+    @@map("ads3_queue_subscribers")
+}
+

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -8,28 +8,168 @@ import {
   Plus,
   Search,
   Zap,
-  Clock,
-  TrendingUp,
-  Play,
   Bot,
   Globe,
   Database,
-  Calendar,
   AlertCircle,
   CheckCircle,
   Eye,
   Edit,
+  Loader2,
 } from "lucide-react"
 import type { DataTrigger } from "@/components/data-trigger-management"
 
 interface DataTriggerListProps {
-  triggers: DataTrigger[]
+  triggers?: DataTrigger[] // 改为可选，支持动态获取
   onTriggerSelect: (trigger: DataTrigger) => void
   onCreateTrigger: () => void
 }
 
-export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: DataTriggerListProps) {
+export function DataTriggerList({ triggers: propTriggers, onTriggerSelect, onCreateTrigger }: DataTriggerListProps) {
   const [searchTerm, setSearchTerm] = useState("")
+  
+  // 动态触发器状态
+  const [triggers, setTriggers] = useState<DataTrigger[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  // 请求状态管理
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const requestRef = useRef<AbortController | null>(null)
+
+  // 获取触发器列表
+  useEffect(() => {
+    const fetchTriggers = async () => {
+      // 如果props中有triggers，使用props中的数据
+      if (propTriggers) {
+        setTriggers(propTriggers)
+        setHasLoaded(true)
+        return
+      }
+
+      // 如果已经加载过数据，不再重复请求
+      if (hasLoaded) {
+        return
+      }
+
+      // 如果正在加载，取消之前的请求
+      if (requestRef.current) {
+        requestRef.current.abort()
+      }
+
+      setLoading(true)
+      setError(null)
+      
+      // 创建新的AbortController
+      requestRef.current = new AbortController()
+      
+      try {
+        const response = await fetch('/api/v1/trigger/list', {
+          signal: requestRef.current.signal
+        })
+        const result = await response.json()
+        
+        if (result.success) {
+          // 处理API返回的字段结构，映射到组件期望的格式
+          const mappedTriggers = result.data.list.map((trigger: any) => {
+            // 从triggerConfig和endpointConfig中提取具体配置
+            const triggerConfig = trigger.triggerConfig || {};
+            const endpointConfig = trigger.endpointConfig || {};
+            
+            // 解析触发类型和目标类型
+            let triggerType = 'schedule'; // 默认值
+            let triggerTarget = 'agent'; // 默认值
+            let scheduleInterval = '60';
+            let incrementCount = '10';
+            let agentId = '';
+            let triggerUrl = '';
+
+            // 从endpoint_type判断目标类型
+            if (trigger.triggerTarget === 'api') {
+              triggerTarget = 'url';
+              triggerUrl = endpointConfig?.url || '';
+            } else if (trigger.triggerTarget === 'queue') {
+              // queue类型可能对应agent，需要从endpoint配置中判断
+              if (endpointConfig?.agentId) {
+                triggerTarget = 'agent';
+                agentId = endpointConfig.agentId;
+              } else {
+                triggerTarget = 'url';
+                triggerUrl = endpointConfig?.url || '';
+              }
+            }
+
+            // 从trigger_type判断触发类型
+            if (trigger.triggerType === 'new') {
+              triggerType = 'increment';
+              incrementCount = triggerConfig?.incrementCount || '10';
+            } else if (trigger.triggerType === 'schedule') {
+              triggerType = 'schedule';
+              scheduleInterval = triggerConfig?.scheduleInterval || '60';
+            } else if (trigger.triggerType === 'immediate') {
+              triggerType = 'immediate';
+            }
+
+            return {
+              id: trigger.id,
+              name: trigger.name || `触发器-${trigger.id}`,
+              tableId: trigger.tableId,
+              tableName: trigger.tableName, // 使用tableName作为主要显示名称
+              tableAlias: trigger.tableAlias, // 使用别名作为主要显示名称
+              tableHandle: trigger.tableHandle || trigger.tableName, // 添加tableHandle字段
+              triggerType: triggerType,
+              endpointType: triggerTarget, // 添加endpointType字段
+              triggerConfig: triggerConfig,
+              endpointConfig: endpointConfig,
+              fields: trigger.fields || [],
+              selectedFields: trigger.fields || [],
+              incrementCount: incrementCount,
+              scheduleInterval: scheduleInterval,
+              agentId: agentId,
+              triggerUrl: triggerUrl,
+              enabled: trigger.enabled,
+              lastTriggered: null, // 暂时设为null
+              successCount: trigger.successCount || 0,
+              failureCount: trigger.failureCount || 0,
+              createdAt: trigger.createdAt,
+              updatedAt: trigger.updatedAt || trigger.createdAt,
+            };
+          });
+          
+          setTriggers(mappedTriggers)
+          setHasLoaded(true)
+        } else {
+          setError(result.message || '获取触发器列表失败')
+        }
+      } catch (error) {
+        // 如果是取消请求，不显示错误
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        console.error('获取触发器列表失败:', error)
+        setError('网络错误，请稍后重试')
+      } finally {
+        setLoading(false)
+        requestRef.current = null
+      }
+    }
+
+    fetchTriggers()
+
+    // 清理函数
+    return () => {
+      if (requestRef.current) {
+        requestRef.current.abort()
+      }
+    }
+  }, [propTriggers, hasLoaded])
+
+  // 手动刷新触发器列表
+  const refreshTriggers = () => {
+    setHasLoaded(false)
+    setError(null)
+    // 重新触发useEffect
+  }
 
   const filteredTriggers = triggers.filter(
     (trigger) =>
@@ -38,38 +178,79 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
       trigger.tableHandle.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const getTriggerTypeIcon = (type: string) => {
-    switch (type) {
-      case "schedule":
-        return Clock
-      case "increment":
-        return TrendingUp
-      case "immediate":
-        return Play
-      default:
-        return Zap
-    }
-  }
-
-  const getTriggerTypeLabel = (type: string) => {
-    switch (type) {
-      case "schedule":
-        return "定时任务"
-      case "increment":
-        return "数据新增"
-      case "immediate":
-        return "立即触发"
-      default:
-        return "未知"
-    }
-  }
-
   const getTargetIcon = (target: string) => {
     return target === "agent" ? Bot : Globe
   }
 
   const getTargetLabel = (target: string) => {
     return target === "agent" ? "Maybe Agent" : "自定义URL"
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 relative">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold elegant-text-gradient mb-2">数据触发</h1>
+              <p className="text-slate-600">智能触发器管理与自动化数据推送配置</p>
+            </div>
+            <Button
+              onClick={onCreateTrigger}
+              className="elegant-gradient hover:opacity-90 transition-opacity elegant-shadow text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              新建触发器
+            </Button>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
+            <p className="text-slate-600">正在加载触发器列表...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 relative">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold elegant-text-gradient mb-2">数据触发</h1>
+              <p className="text-slate-600">智能触发器管理与自动化数据推送配置</p>
+            </div>
+            <Button
+              onClick={onCreateTrigger}
+              className="elegant-gradient hover:opacity-90 transition-opacity elegant-shadow text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              新建触发器
+            </Button>
+          </div>
+        </div>
+        
+        <div className="text-center py-16">
+          <div className="elegant-card max-w-md mx-auto p-8 rounded-2xl elegant-shadow">
+            <div className="text-red-400 mb-4">
+              <AlertCircle className="w-16 h-16 mx-auto opacity-50" />
+            </div>
+            <h3 className="text-xl font-medium text-slate-800 mb-2">加载失败</h3>
+            <p className="text-slate-500 mb-4">{error}</p>
+            <Button 
+              className="elegant-gradient text-white" 
+              onClick={refreshTriggers}
+            >
+              重新加载
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -81,13 +262,25 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
             <h1 className="text-3xl font-bold elegant-text-gradient mb-2">数据触发</h1>
             <p className="text-slate-600">智能触发器管理与自动化数据推送配置</p>
           </div>
-          <Button
-            onClick={onCreateTrigger}
-            className="elegant-gradient hover:opacity-90 transition-opacity elegant-shadow text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            新建触发器
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshTriggers}
+              className="border-slate-200 text-slate-500 hover:bg-slate-50 bg-transparent"
+              disabled={loading}
+            >
+              <Loader2 className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              刷新
+            </Button>
+            <Button
+              onClick={onCreateTrigger}
+              className="elegant-gradient hover:opacity-90 transition-opacity elegant-shadow text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              新建触发器
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -110,22 +303,14 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
               <tr>
                 <th className="text-left p-4 text-sm font-medium text-slate-600">触发器</th>
                 <th className="text-left p-4 text-sm font-medium text-slate-600">关联数据表</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">触发方式</th>
                 <th className="text-left p-4 text-sm font-medium text-slate-600">目标</th>
                 <th className="text-left p-4 text-sm font-medium text-slate-600">状态</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">执行统计</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">最后触发</th>
                 <th className="text-left p-4 text-sm font-medium text-slate-600">操作</th>
               </tr>
             </thead>
             <tbody>
               {filteredTriggers.map((trigger) => {
-                const TriggerIcon = getTriggerTypeIcon(trigger.triggerType)
-                const TargetIcon = getTargetIcon(trigger.triggerTarget)
-                const successRate =
-                  trigger.successCount + trigger.failureCount > 0
-                    ? ((trigger.successCount / (trigger.successCount + trigger.failureCount)) * 100).toFixed(1)
-                    : "0"
+                const TargetIcon = getTargetIcon(trigger.endpointType)
 
                 return (
                   <tr
@@ -140,7 +325,6 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
                         </div>
                         <div>
                           <div className="font-medium text-slate-800">{trigger.name}</div>
-                          <div className="text-sm text-slate-500">触发器</div>
                         </div>
                       </div>
                     </td>
@@ -149,20 +333,7 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
                         <Database className="w-4 h-4 text-blue-500" />
                         <div>
                           <div className="text-sm font-medium text-slate-800">{trigger.tableName}</div>
-                          <div className="text-xs text-slate-500 code-font">{trigger.tableHandle}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <TriggerIcon className="w-4 h-4 text-yellow-500" />
-                        <div>
-                          <div className="text-sm text-slate-800">{getTriggerTypeLabel(trigger.triggerType)}</div>
-                          <div className="text-xs text-slate-500">
-                            {trigger.triggerType === "schedule" && `每 ${trigger.scheduleInterval} 分钟`}
-                            {trigger.triggerType === "increment" && `每 ${trigger.incrementCount} 条`}
-                            {trigger.triggerType === "immediate" && "手动触发"}
-                          </div>
+                          <div className="text-xs text-slate-500 code-font">{trigger.tableAlias}</div>
                         </div>
                       </div>
                     </td>
@@ -170,9 +341,9 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
                       <div className="flex items-center space-x-2">
                         <TargetIcon className="w-4 h-4 text-purple-500" />
                         <div>
-                          <div className="text-sm text-slate-800">{getTargetLabel(trigger.triggerTarget)}</div>
+                          <div className="text-sm text-slate-800">{getTargetLabel(trigger.endpointType)}</div>
                           <div className="text-xs text-slate-500 code-font">
-                            {trigger.triggerTarget === "agent" ? trigger.agentId : trigger.triggerUrl}
+                            {trigger.endpointType === "agent" ? trigger.agentId : trigger.triggerUrl}
                           </div>
                         </div>
                       </div>
@@ -190,24 +361,6 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <CheckCircle className="w-3 h-3 text-green-500" />
-                          <span className="text-xs text-green-600 code-font">{trigger.successCount}</span>
-                          <span className="text-xs text-slate-400">/</span>
-                          <AlertCircle className="w-3 h-3 text-red-500" />
-                          <span className="text-xs text-red-600 code-font">{trigger.failureCount}</span>
-                        </div>
-                        <div className="text-xs text-slate-500">成功率: {successRate}%</div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-green-500" />
-                        <span className="code-font text-green-600 text-sm">{trigger.lastTriggered || "未触发"}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
@@ -220,17 +373,6 @@ export function DataTriggerList({ triggers, onTriggerSelect, onCreateTrigger }: 
                         >
                           <Eye className="w-3 h-3 mr-1" />
                           查看
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-slate-200 text-slate-500 hover:bg-slate-50 bg-transparent"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            // 编辑功能
-                          }}
-                        >
-                          <Edit className="w-3 h-3" />
                         </Button>
                       </div>
                     </td>

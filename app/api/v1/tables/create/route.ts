@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
       await prisma.$executeRawUnsafe(constraintSQL);
     }
     
+    
     // 保存表信息到ads3_tables表
     const tableRecord = await prisma.ads3Table.create({
       data: {
