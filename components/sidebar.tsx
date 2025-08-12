@@ -16,35 +16,40 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useAuth } from '@/contexts/auth-context'
+import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 
 interface SidebarProps {
-  activeMenu: string
-  onMenuChange: (menu: string) => void
+  className?: string
 }
 
-export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
+export function Sidebar({ className }: SidebarProps) {
   const { user, isAuthenticated, logout, error } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
 
   const menuItems = [
     {
       id: 'data-tables',
       label: '数据表管理',
       icon: Database,
+      path: '/data-tables'
     },
     {
       id: 'system-settings',
       label: '系统设置',
       icon: Settings,
+      path: '/system-settings'
     },
   ]
 
   return (
-    <div className="w-72 bg-white/80 border-r border-slate-200/80 backdrop-blur-xl flex flex-col relative">
+    <div className={cn("w-72 bg-white/80 border-r border-slate-200/80 backdrop-blur-xl flex flex-col relative", className)}>
       {/* Subtle Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-purple-50/30 pointer-events-none" />
 
       {/* Logo */}
-      <div className="p-6 border-b border-slate-200/60 relative">
+      <Link href="/" className="p-6 border-b border-slate-200/60 relative block">
         <div className="flex items-center space-x-3">
           <div className="relative">
             <div className="w-10 h-10 elegant-gradient rounded-xl flex items-center justify-center relative overflow-hidden elegant-shadow">
@@ -56,19 +61,18 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
             <p className="text-xs text-blue-600 code-font">DataBridge v1.0</p>
           </div>
         </div>
-
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 relative">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon
-            const isActive = activeMenu === item.id
+            const isActive = pathname === item.path
             return (
               <li key={item.id}>
-                <button
-                  onClick={() => onMenuChange(item.id)}
+                <Link
+                  href={item.path}
                   className={cn(
                     'w-full flex items-center space-x-4 p-4 rounded-xl text-left transition-all duration-300 relative group',
                     isActive
@@ -89,7 +93,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
                       <div className="w-2 h-2 bg-blue-500 rounded-full" />
                     </div>
                   )}
-                </button>
+                </Link>
               </li>
             )
           })}
@@ -150,9 +154,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
         ) : (
           <Button
             className="w-full elegant-gradient text-white font-medium rounded-xl hover:opacity-90 transition-all duration-300 elegant-shadow"
-            onClick={() => {
-              /* Login will be handled by parent component */
-            }}
+            onClick={() => router.push('/login')}
           >
             <User className="w-4 h-4 mr-2" />
             Login

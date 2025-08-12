@@ -1,34 +1,23 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
+import { AuthProvider } from '@/contexts/auth-context'
 import './globals.css'
-import { Toaster } from '@/components/ui/toaster'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Data Bridge',
-  description: 'Data Bridge',
-  generator: 'Data Bridge',
+  title: 'AI 数据桥',
+  description: '智能数据处理平台',
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en">
-      <head>
-        <style>{`
-html {
-  font-family: ${GeistSans.style.fontFamily};
-  --font-sans: ${GeistSans.variable};
-  --font-mono: ${GeistMono.variable};
-}
-        `}</style>
-      </head>
+    <html lang="zh-CN">
       <body>
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

@@ -1,19 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { SystemSettings } from '@/components/system-settings'
+import { Sidebar } from '@/components/sidebar'
 import { useAuth } from '@/contexts/auth-context'
 import { LoginPanel } from '@/components/login-panel'
 
-export default function HomePage() {
-  const router = useRouter()
+export default function SystemSettingsPage() {
   const { isAuthenticated, loading } = useAuth()
-
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      router.push('/data-tables')
-    }
-  }, [isAuthenticated, loading, router])
 
   // 如果正在加载，显示加载状态
   if (loading) {
@@ -42,5 +35,16 @@ export default function HomePage() {
     return <LoginPanel />
   }
 
-  return null
-}
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden">
+      {/* Background Effects */}
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 pointer-events-none" />
+
+      <Sidebar />
+
+      <main className="flex-1 overflow-auto p-6 relative">
+        <SystemSettings />
+      </main>
+    </div>
+  )
+} 
