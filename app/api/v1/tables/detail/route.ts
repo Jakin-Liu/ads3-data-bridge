@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       : { name: tableName! }
 
     // 获取表格基础信息
-    const table = await prisma.ads3Table.findFirst({
+    const table = await prisma.bridgeTable.findFirst({
       where: whereCondition
     })
 

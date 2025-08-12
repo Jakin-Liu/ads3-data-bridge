@@ -13,20 +13,10 @@ datasource db {
   url      = env("POSTGRES_PRISMA_URL")
 }
 
-enum TableStatus {
-  active
-  inactive
-}
-
-enum FieldStatus {
-  active
-  inactive
-}
-
-model Ads3Table {
+model BridgeTable {
   id          Int        @id @default(autoincrement())
   name        String     @db.VarChar(50)
-  status      TableStatus @default(active)
+  status      String     @default("active")
   user_id     String     @db.VarChar(30)
   alias_name  String?
   total_count Int        @default(0)
@@ -34,23 +24,23 @@ model Ads3Table {
   created_at  DateTime   @default(now())
   updated_at  DateTime   @updatedAt
 
-  @@map("ads3_tables")
+  @@map("bridge_tables")
 }
 
-model Ads3TableField {
+model BridgeTableField {
   id          Int        @id @default(autoincrement())
   table_id    Int        
   name        String     
   alias_name  String?
   field_type  String     @default("string") // 字段类型：string, number, boolean, date, json等
-  status      FieldStatus @default(active)
+  status      String     @default("active")
   created_at  DateTime   @default(now())
   updated_at  DateTime   @updatedAt
 
-  @@map("ads3_table_fields")
+  @@map("bridge_table_fields")
 }
 
-model Ads3ConsumerCursor {
+model BridgeConsumerCursor {
   id          Int        @id @default(autoincrement())
   consumer    String     @db.VarChar(30)
   table_id    Int
@@ -59,38 +49,23 @@ model Ads3ConsumerCursor {
 
   created_at  DateTime   @default(now())
   updated_at  DateTime   @updatedAt
-  @@map("ads3_consumer_cursor")
+  @@map("bridge_consumer_cursor")
 }
 
-enum EndpointType {
-    api
-    queue
-}
-
-enum SubscribeStatus {
-  active
-  inactive
-}
-
-enum TriggerType {
-  new
-}
-
-model Ads3QueueSubscriber {
+model BridgeQueueSubscriber {
     id            Int           @id @default(autoincrement())
     name          String        @db.VarChar(100)
     table_id      Int
     table_name    String        @db.VarChar(100)
     status        String        @default("active")
-    endpoint_type String  @default("api")
+    endpoint_type String        @default("api")
     endpoint      Json          // 存储 JSON 结构，可能包含 api、queue_name 或 queue_id 字段
     created_at    DateTime      @default(now())
     updated_at    DateTime      @updatedAt
-    trigger_type  String      @default("new")
+    trigger_type  String        @default("new")
     fields        String[]
     trigger_config  Json      
 
-    
-    @@map("ads3_queue_subscribers")
+    @@map("bridge_queue_subscribers")
 }
 

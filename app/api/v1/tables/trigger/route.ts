@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     // 获取所有活跃状态的数据表信息，只返回需要的字段
-    const tables = await prisma.ads3Table.findMany({
+    const tables = await prisma.bridgeTable.findMany({
       where: {
         status: 'active' // 只获取活跃状态的表
       },

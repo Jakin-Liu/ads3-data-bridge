@@ -4,14 +4,14 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     // 获取所有数据表信息
-    const tables = await prisma.ads3Table.findMany({
+    const tables = await prisma.bridgeTable.findMany({
       orderBy: {
         created_at: 'desc'
       }
     })
 
     // 获取字段数量
-    // const fieldCounts = await prisma.ads3TableField.groupBy({
+    // const fieldCounts = await prisma.bridgeTableField.groupBy({
     //   by: ['table_id'],
     //   where: {
     //     status: 'active'

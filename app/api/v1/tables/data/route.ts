@@ -22,11 +22,11 @@ export async function GET(request: NextRequest) {
     // 查找表格信息
     let table
     if (tableId) {
-      table = await prisma.ads3Table.findUnique({
+      table = await prisma.bridgeTable.findUnique({
         where: { id: parseInt(tableId) }
       })
     } else if (tableName) {
-      table = await prisma.ads3Table.findFirst({
+      table = await prisma.bridgeTable.findFirst({
         where: { 
           OR: [
             { name: tableName },

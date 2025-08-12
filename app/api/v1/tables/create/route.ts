@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     
     
     // 保存表信息到ads3_tables表
-    const tableRecord = await prisma.ads3Table.create({
+    const tableRecord = await prisma.bridgeTable.create({
       data: {
         name: tableName,
         alias_name: tableAliasName,
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     // 保存字段信息到ads3_table_fields表
     const fieldRecords = await Promise.all(
       fields.map(field =>
-        prisma.ads3TableField.create({
+        prisma.bridgeTableField.create({
           data: {
             table_id: tableRecord.id,
             name: field.name,

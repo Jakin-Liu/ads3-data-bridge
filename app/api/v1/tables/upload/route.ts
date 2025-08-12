@@ -20,11 +20,11 @@ async function getTableInfo(tableId?: string | number, tableName?: string) {
   
   if (tableId) {
     const id = typeof tableId === 'string' ? parseInt(tableId) : tableId;
-    table = await prisma.ads3Table.findUnique({
+    table = await prisma.bridgeTable.findUnique({
       where: { id }
     });
   } else if (tableName) {
-    table = await prisma.ads3Table.findFirst({
+    table = await prisma.bridgeTable.findFirst({
       where: { 
         OR: [
           { name: tableName },

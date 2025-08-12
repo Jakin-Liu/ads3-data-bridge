@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 // 获取表信息
 async function getTableInfo(tableName: string) {
-  const table = await prisma.ads3Table.findFirst({
+  const table = await prisma.bridgeTable.findFirst({
     where: { 
       OR: [
         { name: tableName },
