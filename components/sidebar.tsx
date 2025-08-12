@@ -52,22 +52,11 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
             </div>
           </div>
           <div>
-            <h1 className="text-xl font-bold elegant-text-gradient">AI 数据中枢</h1>
-            <p className="text-xs text-blue-600 code-font">DataBridge v2.0</p>
+            <h1 className="text-xl font-bold elegant-text-gradient">AI 数据桥</h1>
+            <p className="text-xs text-blue-600 code-font">DataBridge v1.0</p>
           </div>
         </div>
 
-        {/* Status Indicator */}
-        <div className="flex items-center space-x-2 mt-4 text-xs">
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-green-600">系统运行正常</span>
-          </div>
-          <div className="flex items-center space-x-1 ml-4">
-            <Activity className="w-3 h-3 text-blue-500" />
-            <span className="text-blue-600">实时监控</span>
-          </div>
-        </div>
       </div>
 
       {/* Navigation */}
@@ -169,17 +158,6 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
             Login
           </Button>
         )}
-
-        {/* System Status */}
-        <div className="text-xs text-slate-500 code-font">
-          <div className="flex justify-between items-center">
-            <span>Build 2024.01.15</span>
-            <div className="flex items-center space-x-1">
-              <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-green-600">在线</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
