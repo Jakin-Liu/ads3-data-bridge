@@ -72,7 +72,7 @@ export function DataTableDetail({ table, onBack }: DataTableDetailProps) {
             className="flex items-center space-x-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=active]:border-blue-200"
           >
             <FileText className="w-4 h-4" />
-            <span>数据字段</span>
+            <span>数据字段和内容</span>
           </TabsTrigger>
           <TabsTrigger
             value="upload"

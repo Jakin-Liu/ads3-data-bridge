@@ -36,7 +36,7 @@ interface TableDetail {
 }
 
 export function DataUploadTab({ table }: DataUploadTabProps) {
-  const [uploadMethod, setUploadMethod] = useState("manual")
+  const [uploadMethod, setUploadMethod] = useState("api")
   const [tableDetail, setTableDetail] = useState<TableDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -94,27 +94,27 @@ export function DataUploadTab({ table }: DataUploadTabProps) {
     <div className="space-y-6">
       {/* 上传方式选择 */}
       <Tabs value={uploadMethod} onValueChange={setUploadMethod} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200 shadow-sm">
-          <TabsTrigger
-            value="manual"
-            className="flex items-center space-x-2 data-[state=active]:bg-green-50 data-[state=active]:text-green-600 data-[state=active]:border-green-200"
-          >
-            <Upload className="w-4 h-4" />
-            <span>手动上传</span>
-          </TabsTrigger>
+        <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-100 p-1 text-gray-500">
           <TabsTrigger
             value="api"
-            className="flex items-center space-x-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=active]:border-blue-200"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-950 data-[state=active]:shadow-sm"
           >
-            <Wifi className="w-4 h-4" />
+            <Wifi className="w-4 h-4 mr-2" />
             <span>API 上传</span>
           </TabsTrigger>
           <TabsTrigger
             value="mcp"
-            className="flex items-center space-x-2 data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600 data-[state=active]:border-purple-200"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-950 data-[state=active]:shadow-sm"
           >
-            <Code className="w-4 h-4" />
+            <Code className="w-4 h-4 mr-2" />
             <span>MCP 上传</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="manual"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-950 data-[state=active]:shadow-sm"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            <span>手动上传</span>
           </TabsTrigger>
         </TabsList>
 
