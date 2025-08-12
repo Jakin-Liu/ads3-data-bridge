@@ -178,31 +178,62 @@ export function DataFieldsTab({ table }: DataFieldsTabProps) {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="bg-white rounded-lg overflow-hidden border border-gray-200 max-h-[600px] overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
-                  <tr>
-                    {fields.map((field) => (
-                      <th key={field.name} className="text-left p-2 text-xs font-medium text-gray-700 code-font whitespace-nowrap">
-                        {field.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.slice(0, 20).map((record, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      {record.values.map((value, valueIndex) => (
-                        <td key={valueIndex} className="p-2 text-xs code-font text-gray-700 whitespace-nowrap">
-                          {typeof value === 'string' && value.length > 50 
-                            ? `${value.substring(0, 50)}...` 
-                            : String(value)}
-                        </td>
+            <div className="relative bg-white rounded-lg overflow-hidden border border-gray-200 max-h-[600px]">
+              {/* 左侧渐变阴影 */}
+              <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none hidden scroll-shadow-left"></div>
+              {/* 右侧渐变阴影 */}
+              <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none scroll-shadow-right"></div>
+              
+              <div className="overflow-x-auto overflow-y-auto max-h-[600px]" onScroll={(e) => {
+                const target = e.currentTarget;
+                const leftShadow = target.parentElement?.querySelector('.scroll-shadow-left');
+                const rightShadow = target.parentElement?.querySelector('.scroll-shadow-right');
+                
+                if (leftShadow instanceof HTMLElement) {
+                  leftShadow.style.display = target.scrollLeft > 0 ? 'block' : 'none';
+                }
+                if (rightShadow instanceof HTMLElement) {
+                  rightShadow.style.display = 
+                    target.scrollLeft < (target.scrollWidth - target.clientWidth) ? 'block' : 'none';
+                }
+              }}>
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-20">
+                    <tr>
+                      {fields.map((field, index) => (
+                        <th 
+                          key={field.name} 
+                          className={`text-left p-2 text-xs font-medium text-gray-700 code-font whitespace-nowrap ${
+                            index < 2 ? 'sticky left-0 z-30 bg-gray-50' : ''
+                          } ${index === 1 ? 'border-r border-gray-200' : ''}`}
+                          style={index < 2 ? { left: index === 0 ? 0 : '150px' } : {}}
+                        >
+                          {field.name}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {records.slice(0, 20).map((record, index) => (
+                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        {record.values.map((value, valueIndex) => (
+                          <td 
+                            key={valueIndex} 
+                            className={`p-2 text-xs code-font text-gray-700 whitespace-nowrap ${
+                              valueIndex < 2 ? 'sticky left-0 z-10 bg-white' : ''
+                            } ${valueIndex === 1 ? 'border-r border-gray-200' : ''}`}
+                            style={valueIndex < 2 ? { left: valueIndex === 0 ? 0 : '150px' } : {}}
+                          >
+                            {typeof value === 'string' && value.length > 50 
+                              ? `${value.substring(0, 50)}...` 
+                              : String(value)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
