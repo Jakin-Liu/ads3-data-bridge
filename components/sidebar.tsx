@@ -32,11 +32,6 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
       icon: Database,
     },
     {
-      id: 'data-triggers',
-      label: '数据触发',
-      icon: Zap,
-    },
-    {
       id: 'system-settings',
       label: '系统设置',
       icon: Settings,

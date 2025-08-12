@@ -22,7 +22,6 @@ export interface DataTable {
   consumptionStatus: {
     apiEnabled: boolean
     mcpEnabled: boolean
-    triggerEnabled: boolean
   }
   status: string
   createdAt: string

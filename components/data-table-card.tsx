@@ -47,7 +47,6 @@ interface DataTable {
   lastUpdated: string
   mcpEnabled: boolean
   apiEnabled: boolean
-  triggerEnabled: boolean
   fields: DataTableField[]
 }
 
@@ -218,7 +217,7 @@ export function DataTableCard({ table }: DataTableCardProps) {
                           )}
                         </>
                       )}
-                      {section.id === "triggers" && table.triggerEnabled && (
+                      {section.id === "triggers" && (
                         <Badge
                           variant="outline"
                           className="text-xs bg-yellow-500/10 text-yellow-400 border-yellow-500/30"

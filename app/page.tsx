@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { DataTableManagement } from '@/components/data-table-management'
 import { SystemSettings } from '@/components/system-settings'
-import { DataTriggerManagement } from '@/components/data-trigger-management'
 import { LoginPanel } from '@/components/login-panel'
 import { AuthProvider, useAuth } from '@/contexts/auth-context'
 
@@ -49,7 +48,6 @@ function DashboardContent() {
       <Sidebar activeMenu={activeMenu} onMenuChange={setActiveMenu} />
       <main className="flex-1 overflow-auto relative">
         {activeMenu === 'data-tables' && <DataTableManagement />}
-        {activeMenu === 'data-triggers' && <DataTriggerManagement />}
         {activeMenu === 'system-settings' && <SystemSettings />}
       </main>
     </div>

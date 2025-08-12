@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, Cpu, Activity, Zap, Hash, Database, Calendar, BarChart3, Eye, Edit } from "lucide-react"
+import { Plus, Search, Cpu, Activity, Hash, Database, Calendar, BarChart3, Eye, Edit } from "lucide-react"
 import type { DataTable } from "@/components/data-table-management"
 
 interface DataTableListProps {
@@ -78,7 +78,7 @@ export function DataTableList({ tables, onTableSelect, onCreateTable, loading = 
             </div>
             <div className="elegant-card px-4 py-2 rounded-lg elegant-shadow">
               <div className="flex items-center space-x-2">
-                <Zap className="w-4 h-4 text-purple-500" />
+                <BarChart3 className="w-4 h-4 text-purple-500" />
                 <div className="text-sm">
                   <span className="text-slate-500">总记录</span>
                   <div className="font-bold text-purple-600 code-font">
@@ -169,12 +169,7 @@ export function DataTableList({ tables, onTableSelect, onCreateTable, loading = 
                           MCP
                         </Badge>
                       )}
-                      {table.consumptionStatus?.triggerEnabled && (
-                        <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-600 border-yellow-200">
-                          触发器
-                        </Badge>
-                      )}
-                      {!table.consumptionStatus?.apiEnabled && !table.consumptionStatus?.mcpEnabled && !table.consumptionStatus?.triggerEnabled && (
+                      {!table.consumptionStatus?.apiEnabled && !table.consumptionStatus?.mcpEnabled && (
                         <span className="text-slate-400 text-sm">未配置</span>
                       )}
                     </div>

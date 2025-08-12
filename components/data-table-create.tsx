@@ -166,7 +166,6 @@ ORD003	AirPods	2	1299	CUST001	2024-01-15 14:20`,
         consumptionStatus: {
           apiEnabled: false,
           mcpEnabled: false,
-          triggerEnabled: false,
         },
         status: "active",
         createdAt: new Date().toISOString(),
