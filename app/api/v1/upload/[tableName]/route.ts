@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { sendToQueue } from '@/lib/cloudflare';
 
 // 定义上传数据的验证schema
 const UploadDataSchema = z.object({
@@ -211,14 +210,6 @@ export async function POST(
     
     for (let i = 0; i < data.length; i++) {
       try {
-
-        await sendToQueue(process.env.ADS3_BOT_MESSAGE_QUEUE || '', {
-          table: tableName,
-          data: [data[i]]
-        });
-
-        insertedCount++;
-        continue;
         const record = data[i];
         const fields = Object.keys(record);
         
